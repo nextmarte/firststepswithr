@@ -1,0 +1,176 @@
+---
+title: "Apresentação GGPLOT"
+author: "Marcus Antonio Cardoso Ramalho"
+date: "21/10/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+### Carregando os pacotes
+```{r message=FALSE, warning=FALSE}
+library(dplyr)
+library(readr)
+library(ggplot2)
+library(tidyverse)
+library(RgoogleMaps)
+library(ggmap)
+library(esquisse)
+
+
+```
+
+
+### importando a base e plotando os gráficos
+
+```{r importando a base de dados, message=FALSE, warning=FALSE}
+
+#importando os dados
+
+nasc_vivos_2018<- read_delim("~/Apresentação_GGPLOT/nasc_vivos_2018_municipios.csv", 
+    ";", escape_double = FALSE, trim_ws = TRUE)
+  nasc_vivos_2018<-rename(nasc_vivos_2018,Populacao=POP_EST_2018)
+na.omit(nasc_vivos_2018)
+
+#Calculando a taxa de nascimentos/população
+nasc_vivos_2018<-mutate(nasc_vivos_2018,taxa=((Nascimentos*1000)/Populacao))
+
+#Plotando mapas
+
+#limites do mapa
+#box <- make_bbox(longitude, latitude, data = nasc_vivos_2018)
+
+#plotando o mapa por região
+
+#mapa <-
+#ggmap(
+ #   get_map(location = box, maptype="terrain", source="stamen"))
+ # mapa+
+  #  geom_point(aes(x = nasc_vivos_2018$longitude, y = nasc_vivos_2018$latitude,  colour = Nascimentos), data = nasc_vivos_2018, size = 0.5)
+
+
+#heatmap
+  
+ #mapa<-mapa+
+ # stat_density2d(data=nasc_vivos_2018,
+                 #aes(x=nasc_vivos_2018$longitude,
+                     #y=nasc_vivos_2018$latitude,
+                     #fill=..level.., alpha=..level..), geom="polygon")
+
+#Aqui é possível colocar as cores do gradiante, da mais forte para a mais fraca, é possível colocar a cor pelo nome ou pelo código como coloquei abaixo.
+ #mapa +
+  #scale_fill_gradientn(colors=c("#FFFFD4", "#FED98E", "#FE9929", "#D95F0E", "#993404")) 
+
+
+#nasc_vivos_2018<-mutate(nasc_vivos_2018,coordenada=paste(longitude,latitude,sep=","))
+
+
+
+
+```
+
+ggplot(data = <DATA>) + 
+  <GEOM_FUNCTION>(
+     mapping = aes(<MAPPINGS>),
+     stat = <STAT>, 
+     position = <POSITION>
+  ) +
+  <COORDINATE_FUNCTION> +
+  <FACET_FUNCTION>
+
+
+
+### Gráfico de dispersão do numero de nascimentos x população
+
+```{r warning=FALSE}
+#escalas logarítimicas
+ggplot(data=nasc_vivos_2018) +
+ aes(x = Nascimentos, y = Populacao) +
+ geom_point(colour = "blue")+
+  scale_x_continuous(trans = 'log2') +
+  scale_y_continuous(trans = 'log2')+
+  ggtitle("Nascidos vivos vs população municipal","Dispersão")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+#escalas logarítimicas
+ggplot(data=nasc_vivos_2018) +
+ aes(x = Nascimentos, y = Populacao) +
+ geom_line(colour = "blue")+
+  scale_x_continuous(trans = 'log2') +
+  scale_y_continuous(trans = 'log2')+
+  ggtitle("Nascidos vivos vs população municipal","Linha")+
+  theme(plot.title = element_text(hjust = 0.5)) 
+
+
+
+
+#boxplot da taxa de natalidade 
+ggplot(data=nasc_vivos_2018) +
+ aes(x = Regiao, y = taxa) +
+ geom_boxplot(mapping = aes(color = Regiao))+
+  ggtitle("Taxa de natalidade por mil habitantes")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+#População por região
+
+ggplot(data=nasc_vivos_2018) +
+ aes(x = Regiao, weight = Populacao) +
+ geom_bar(mapping = aes(fill = Regiao)) +
+    ggtitle("População por região")+
+  theme(plot.title = element_text(hjust = 0.5))
+
+
+
+
+```
+
+#### Vamos plotar o mesmo gráfico, só que agora identificando as regiões
+
+```{r message=FALSE, warning=FALSE}
+ggplot(data=nasc_vivos_2018) +
+ aes(x = Nascimentos, y = Populacao) +
+ geom_point(mapping = aes(color = Regiao))+
+  scale_x_continuous(trans = 'log2') +
+  scale_y_continuous(trans = 'log2')+
+  ggtitle("Nascidos vivos vs população municipal")
+ 
+
+
+```
+
+##### Podemos ver com esse gráfico que as maiores taxas de natalidade estão concentradas nas duas maiores da região sudeste, em seguida vemos as cidades da região nordeste com maior número de nascimentos em relação a sua população.
+
+
+##### Vamos verificar agora o número de creches em cada região 
+
+```{r}
+
+
+ggplot(data=nasc_vivos_2018) +
+ aes(x = Regiao, weight = Creches_mun) +
+ geom_bar(mapping = aes(fill = Regiao))+
+  ggtitle("Número de creches por região")
+ 
+```
+
+
+
+##### Considerando os outliers que vimos nos gráficos de dispersão podemos filtrar as duas regiões que apresentam essa discrepância e comparar com um conjunto de dados que reflita melhor a reliadade da maioria das cidades brasileiras, até 100000 habitantes.
+```{r}
+nasc_vivos_2018 %>%
+ filter(POP_EST_2018 >= 1000 & POP_EST_2018 <= 100000) %>%
+ filter(Regiao %in% 
+    c("NORDESTE", "SUDESTE")) %>%
+ ggplot() +
+ aes(x = Regiao, y = NASC_VIVOS_2018) +
+ geom_boxplot(fill = "green") +
+ ggtitle("Nascimentos nas regiões sudeste e nordeste","cidades até 100000 habitantes")
+```
+
+
+
+
+
